@@ -41,53 +41,45 @@ async def start(message: Message):
 @dp.message(F.chat.type == "private")
 async def user_to_group(message: Message):
 
-    user = message.from_user
-    await add_user(user)
+    try:
 
-    # 🚫 бан чек
-    if await is_banned(user.id):
-        await message.answer("🚫 Вы заблокированы.")
-        return
+        user = message.from_user
+        await add_user(user)
 
-    # игнор команд
-    if message.text and message.text.startswith("/"):
-        return
+        if await is_banned(user.id):
+            await message.answer("🚫 Вы заблокированы.")
+            return
 
-    # ================= TEXT =================
-    if message.text:
-        sent = await bot.send_message(
-            GROUP_ID,
-            f"{message.text}"
-        )
+        if message.text and message.text.startswith("/"):
+            return
 
-    # ================= PHOTO =================
-    elif message.photo:
-        sent = await bot.send_photo(
-            GROUP_ID,
-            message.photo[-1].file_id,
-        )
+        if message.text:
+            sent = await bot.send_message(
+                GROUP_ID,
+                f"{message.text}"
+            )
 
-    # ================= VIDEO =================
-    elif message.video:
-        sent = await bot.send_video(
-            GROUP_ID,
-            message.video.file_id,
-        )
+        elif message.photo:
+            sent = await bot.send_photo(
+                GROUP_ID,
+                message.photo[-1].file_id,
+            )
 
-    # ================= VOICE =================
-    elif message.voice:
-        sent = await bot.send_voice(
-            GROUP_ID,
-            message.voice.file_id
-        )
+        elif message.video:
+            sent = await bot.send_video(
+                GROUP_ID,
+                message.video.file_id,
+            )
 
-    else:
-        return
+        else:
+            return
 
-    await save_message(sent.message_id, user.id)
+        await save_message(sent.message_id, user.id)
 
-    await message.answer("Отправлено.")
+        await message.answer("Отправлено.")
 
+    except Exception as e:
+        print(f"USER_TO_GROUP ERROR: {e}")
 
 # =========================
 # GROUP → USER (REPLY SYSTEM)
@@ -95,50 +87,45 @@ async def user_to_group(message: Message):
 @dp.message(F.chat.id == GROUP_ID, F.reply_to_message)
 async def group_handler(message: Message):
 
-    user_id = await get_user(message.reply_to_message.message_id)
+    try:
 
-    if not user_id:
-        return
+        user_id = await get_user(message.reply_to_message.message_id)
 
-    text = message.text or ""
+        if not user_id:
+            return
 
-    # ================= BAN =================
-    if text == "/ban":
-        await ban(user_id)
-        await message.reply("🚫 Пользователь заблокирован.")
-        return
+        text = message.text or ""
 
-    # ================= UNBAN =================
-    if text == "/unban":
-        await unban(user_id)
-        await message.reply("Пользователь разблокирован.")
-        return
+        if text == "/ban":
+            await ban(user_id)
+            await message.reply("Забанен.")
+            return
 
-    # ================= REPLY =================
-    if message.text:
-        await bot.send_message(
-            user_id,
-            f"{text}"
-        )
+        if text == "/unban":
+            await unban(user_id)
+            await message.reply("Разбанен.")
+            return
 
-    elif message.photo:
-        await bot.send_photo(
-            user_id,
-            message.photo[-1].file_id,
-        )
+        if message.text:
+            await bot.send_message(
+                user_id,
+                f"{text}"
+            )
 
-    elif message.video:
-        await bot.send_video(
-            user_id,
-            message.video.file_id,
-        )
+        elif message.photo:
+            await bot.send_photo(
+                user_id,
+                message.photo[-1].file_id,
+            )
 
-    elif message.voice:
-        await bot.send_voice(
-            user_id,
-            message.voice.file_id
-        )
+        elif message.video:
+            await bot.send_video(
+                user_id,
+                message.video.file_id,
+            )
 
+    except Exception as e:
+        print(f"GROUP_HANDLER ERROR: {e}")
 
 # =========================
 # BANNED LIST
@@ -171,9 +158,25 @@ async def banned_list(message: Message):
 # START BOT
 # =========================
 async def main():
-    await init_db()
-    print("BOT STARTED")
-    await dp.start_polling(bot)
+
+    while True:
+
+        try:
+            print("STARTING BOT...")
+
+            await init_db()
+
+            print("BOT STARTED")
+
+            await dp.start_polling(bot)
+
+        except Exception as e:
+
+            print(f"BOT CRASHED: {e}")
+
+            print("RESTART AFTER 5 SECONDS...")
+
+            await asyncio.sleep(5)
 
 
 if __name__ == "__main__":
