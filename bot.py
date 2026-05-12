@@ -1,5 +1,6 @@
 import asyncio
 import os
+os.environ["PORT"] = "10000"
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
