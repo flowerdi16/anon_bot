@@ -2,8 +2,8 @@ import asyncio
 import os
 
 from aiogram import Bot, Dispatcher, F
-from aiogram.filters import Command
 from aiogram.types import Message
+from aiogram.filters import Command
 from dotenv import load_dotenv
 
 from db import (
@@ -20,11 +20,18 @@ from db import (
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-GROUP_ID = int(os.getenv("GROUP_ID"))
+GROUP_ID = os.getenv("GROUP_ID")
 
-bot = Bot(BOT_TOKEN)
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN is empty or not loaded from .env")
+
+if not GROUP_ID:
+    raise ValueError("GROUP_ID is empty or not loaded from .env")
+
+GROUP_ID = int(GROUP_ID)
+
+bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
-
 
 # =========================
 # START
@@ -158,26 +165,9 @@ async def banned_list(message: Message):
 # START BOT
 # =========================
 async def main():
-
-    while True:
-
-        try:
-            print("STARTING BOT...")
-
-            await init_db()
-
-            print("BOT STARTED")
-
-            await dp.start_polling(bot)
-
-        except Exception as e:
-
-            print(f"BOT CRASHED: {e}")
-
-            print("RESTART AFTER 5 SECONDS...")
-
-            await asyncio.sleep(5)
-
+    await init_db()
+    print("BOT STARTED")
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
