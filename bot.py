@@ -32,7 +32,7 @@ dp = Dispatcher()
 @dp.message(Command("start"))
 async def start(message: Message):
     await add_user(message.from_user)
-    await message.answer("📩 Напиши сообщение — оно уйдёт анонимно.")
+    await message.answer("Напишите анонимное сообщение.")
 
 
 # =========================
@@ -57,7 +57,7 @@ async def user_to_group(message: Message):
     if message.text:
         sent = await bot.send_message(
             GROUP_ID,
-            f"📩 АНОНИМНО:\n\n{message.text}"
+            f"{message.text}"
         )
 
     # ================= PHOTO =================
@@ -65,7 +65,6 @@ async def user_to_group(message: Message):
         sent = await bot.send_photo(
             GROUP_ID,
             message.photo[-1].file_id,
-            caption="📷 Анонимное фото"
         )
 
     # ================= VIDEO =================
@@ -73,7 +72,6 @@ async def user_to_group(message: Message):
         sent = await bot.send_video(
             GROUP_ID,
             message.video.file_id,
-            caption="🎥 Анонимное видео"
         )
 
     # ================= VOICE =================
@@ -88,7 +86,7 @@ async def user_to_group(message: Message):
 
     await save_message(sent.message_id, user.id)
 
-    await message.answer("✅ Отправлено")
+    await message.answer("Отправлено.")
 
 
 # =========================
@@ -107,34 +105,32 @@ async def group_handler(message: Message):
     # ================= BAN =================
     if text == "/ban":
         await ban(user_id)
-        await message.reply("🚫 Забанен")
+        await message.reply("🚫 Пользователь заблокирован.")
         return
 
     # ================= UNBAN =================
     if text == "/unban":
         await unban(user_id)
-        await message.reply("✅ Разбанен")
+        await message.reply("Пользователь разблокирован.")
         return
 
     # ================= REPLY =================
     if message.text:
         await bot.send_message(
             user_id,
-            f"💬 Ответ:\n\n{text}"
+            f"{text}"
         )
 
     elif message.photo:
         await bot.send_photo(
             user_id,
             message.photo[-1].file_id,
-            caption="💬 Ответ"
         )
 
     elif message.video:
         await bot.send_video(
             user_id,
             message.video.file_id,
-            caption="💬 Ответ"
         )
 
     elif message.voice:
