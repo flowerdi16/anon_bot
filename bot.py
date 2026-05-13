@@ -138,7 +138,7 @@ async def group_handler(message: Message):
 # =========================
 # BANNED LIST
 # =========================
-@dp.message(Command("banned"))
+@dp.message(F.text == "/banned")
 async def banned_list(message: Message):
 
     if message.chat.type != "private":
