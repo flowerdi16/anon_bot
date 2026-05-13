@@ -21,6 +21,7 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROUP_ID = os.getenv("GROUP_ID")
+OWNER_IDS = list(map(int, os.getenv("OWNER_IDS").split(",")))
 
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN is empty or not loaded from .env")
@@ -140,7 +141,10 @@ async def group_handler(message: Message):
 @dp.message(Command("banned"))
 async def banned_list(message: Message):
 
-    if message.chat.id != GROUP_ID:
+    if message.chat.type != "private":
+        return
+
+    if message.from_user.id not in OWNER_IDS:
         return
 
     rows = await get_banned()
