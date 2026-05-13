@@ -143,41 +143,34 @@ async def group_handler(message: Message):
 # =========================
 # BANNED LIST
 # =========================
-@dp.message(F.text == "/banned")
+@dp.message(F.text)
 async def banned_list(message: Message):
 
-    print("BANNED HANDLER TRIGGERED")
-
-    if message.chat.type != "private":
+    if message.text != "/banned":
         return
+
+    print("BANNED TRIGGERED")
 
     if message.from_user.id not in OWNER_IDS:
         return
 
-    try:
-        rows = await get_banned()
+    rows = await get_banned()
 
-        if not rows:
-            await message.answer("🚫 Пусто")
-            return
+    if not rows:
+        await message.answer("🚫 Пусто")
+        return
 
-        text = "🚫 Забаненные:\n\n"
+    text = "🚫 Забаненные:\n\n"
 
-        for uid, username, name in rows:
-            text += (
-                f"👤 {name}\n"
-                f"@{username or 'no_username'}\n"
-                f"ID: {uid}\n\n"
-            )
+    for uid, username, name in rows:
+        text += (
+            f"👤 {name}\n"
+            f"@{username or 'no_username'}\n"
+            f"ID: {uid}\n\n"
+        )
 
-        await message.answer(text)
+    await message.answer(text)
 
-    except Exception as e:
-        print(f"BANNED ERROR: {e}")
-
-@dp.message()
-async def debug(message: Message):
-    print("DEBUG:", repr(message.text), message.chat.type, message.from_user.id)
 # =========================
 # START BOT
 # =========================
