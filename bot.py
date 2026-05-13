@@ -21,7 +21,12 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROUP_ID = os.getenv("GROUP_ID")
-OWNER_IDS = list(map(int, os.getenv("OWNER_IDS").split(",")))
+OWNER_IDS = os.getenv("OWNER_IDS")
+
+if not OWNER_IDS:
+    raise ValueError("OWNER_IDS is empty")
+
+OWNER_IDS = list(map(int, OWNER_IDS.split(",")))
 
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN is empty or not loaded from .env")
@@ -170,6 +175,9 @@ async def banned_list(message: Message):
     except Exception as e:
         print(f"BANNED ERROR: {e}")
 
+@dp.message()
+async def debug(message: Message):
+    print("DEBUG:", repr(message.text), message.chat.type, message.from_user.id)
 # =========================
 # START BOT
 # =========================
