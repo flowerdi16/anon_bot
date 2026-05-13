@@ -23,18 +23,17 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROUP_ID = os.getenv("GROUP_ID")
 OWNER_IDS = os.getenv("OWNER_IDS")
 
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN is empty")
+
+if not GROUP_ID:
+    raise ValueError("GROUP_ID is empty")
+
 if not OWNER_IDS:
     raise ValueError("OWNER_IDS is empty")
 
-OWNER_IDS = list(map(int, OWNER_IDS.split(",")))
-
-if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN is empty or not loaded from .env")
-
-if not GROUP_ID:
-    raise ValueError("GROUP_ID is empty or not loaded from .env")
-
 GROUP_ID = int(GROUP_ID)
+OWNER_IDS = [int(x.strip()) for x in OWNER_IDS.split(",")]
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -55,7 +54,6 @@ async def start(message: Message):
 async def user_to_group(message: Message):
 
     try:
-
         user = message.from_user
         await add_user(user)
 
@@ -63,26 +61,18 @@ async def user_to_group(message: Message):
             await message.answer("🚫 Вы заблокированы.")
             return
 
-        if message.text and message.text.startswith("/") and message.text != "/banned":
+        # ❗ ВАЖНО: ВСЕ КОМАНДЫ УХОДЯТ ИЗ ЭТОГО HANDLER
+        if message.text and message.text.startswith("/"):
             return
 
         if message.text:
-            sent = await bot.send_message(
-                GROUP_ID,
-                f"{message.text}"
-            )
+            sent = await bot.send_message(GROUP_ID, message.text)
 
         elif message.photo:
-            sent = await bot.send_photo(
-                GROUP_ID,
-                message.photo[-1].file_id,
-            )
+            sent = await bot.send_photo(GROUP_ID, message.photo[-1].file_id)
 
         elif message.video:
-            sent = await bot.send_video(
-                GROUP_ID,
-                message.video.file_id,
-            )
+            sent = await bot.send_video(GROUP_ID, message.video.file_id)
 
         else:
             return
@@ -94,14 +84,14 @@ async def user_to_group(message: Message):
     except Exception as e:
         print(f"USER_TO_GROUP ERROR: {e}")
 
+
 # =========================
-# GROUP → USER (REPLY SYSTEM)
+# GROUP → USER (REPLY)
 # =========================
 @dp.message(F.chat.id == GROUP_ID, F.reply_to_message)
 async def group_handler(message: Message):
 
     try:
-
         user_id = await get_user(message.reply_to_message.message_id)
 
         if not user_id:
@@ -120,39 +110,31 @@ async def group_handler(message: Message):
             return
 
         if message.text:
-            await bot.send_message(
-                user_id,
-                f"{text}"
-            )
+            await bot.send_message(user_id, message.text)
 
         elif message.photo:
-            await bot.send_photo(
-                user_id,
-                message.photo[-1].file_id,
-            )
+            await bot.send_photo(user_id, message.photo[-1].file_id)
 
         elif message.video:
-            await bot.send_video(
-                user_id,
-                message.video.file_id,
-            )
+            await bot.send_video(user_id, message.video.file_id)
 
     except Exception as e:
         print(f"GROUP_HANDLER ERROR: {e}")
 
+
 # =========================
-# BANNED LIST
+# BANNED LIST (АДМИН ТОЛЬКО)
 # =========================
-@dp.message(F.text)
+@dp.message(Command("banned"))
 async def banned_list(message: Message):
 
-    if message.text != "/banned":
+    if message.chat.type != "private":
         return
-
-    print("BANNED TRIGGERED")
 
     if message.from_user.id not in OWNER_IDS:
         return
+
+    print("BANNED TRIGGERED")
 
     rows = await get_banned()
 
@@ -171,6 +153,7 @@ async def banned_list(message: Message):
 
     await message.answer(text)
 
+
 # =========================
 # START BOT
 # =========================
@@ -178,6 +161,7 @@ async def main():
     await init_db()
     print("BOT STARTED")
     await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
