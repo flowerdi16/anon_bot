@@ -1,3 +1,5 @@
+print("BOT FILE LOADED: NEW VERSION")
+
 import asyncio
 import os
 
@@ -127,6 +129,8 @@ async def group_handler(message: Message):
 # =========================
 @dp.message(Command("banned"))
 async def banned_list(message: Message):
+
+    print("🔥 /banned HIT")
 
     if message.chat.type != "private":
         return
