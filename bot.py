@@ -1,5 +1,3 @@
-print("BOT FILE LOADED: NEW VERSION")
-
 import asyncio
 import os
 
@@ -22,20 +20,15 @@ from db import (
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-GROUP_ID = os.getenv("GROUP_ID")
-OWNER_IDS = os.getenv("OWNER_IDS")
+
+GROUP_IDS = list(map(int, os.getenv("GROUP_IDS").split(",")))
+OWNER_IDS = list(map(int, os.getenv("OWNER_IDS").split(",")))
 
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN is empty")
 
-if not GROUP_ID:
-    raise ValueError("GROUP_ID is empty")
-
-if not OWNER_IDS:
-    raise ValueError("OWNER_IDS is empty")
-
-GROUP_ID = int(GROUP_ID)
-OWNER_IDS = [int(x.strip()) for x in OWNER_IDS.split(",")]
+if not GROUP_IDS:
+    raise ValueError("GROUP_IDS is empty")
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -50,7 +43,7 @@ async def start(message: Message):
 
 
 # =========================
-# USER → GROUP (АНОНИМКА)
+# USER → GROUPS
 # =========================
 @dp.message(F.chat.type == "private")
 async def user_to_group(message: Message):
@@ -63,23 +56,30 @@ async def user_to_group(message: Message):
             await message.answer("🚫 Вы заблокированы.")
             return
 
-        # ❗ ВАЖНО: ВСЕ КОМАНДЫ УХОДЯТ ИЗ ЭТОГО HANDLER
         if message.text and message.text.startswith("/"):
             return
 
-        if message.text:
-            sent = await bot.send_message(GROUP_ID, message.text)
+        sent_messages = []
 
-        elif message.photo:
-            sent = await bot.send_photo(GROUP_ID, message.photo[-1].file_id)
+        for gid in GROUP_IDS:
 
-        elif message.video:
-            sent = await bot.send_video(GROUP_ID, message.video.file_id)
+            if message.text:
+                sent = await bot.send_message(gid, message.text)
 
-        else:
-            return
+            elif message.photo:
+                sent = await bot.send_photo(gid, message.photo[-1].file_id)
 
-        await save_message(sent.message_id, user.id)
+            elif message.video:
+                sent = await bot.send_video(gid, message.video.file_id)
+
+            else:
+                continue
+
+            sent_messages.append(sent)
+
+        # сохраняем связь только с первой группой (достаточно)
+        if sent_messages:
+            await save_message(sent_messages[0].message_id, user.id)
 
         await message.answer("Отправлено.")
 
@@ -90,7 +90,7 @@ async def user_to_group(message: Message):
 # =========================
 # GROUP → USER (REPLY)
 # =========================
-@dp.message(F.chat.id == GROUP_ID, F.reply_to_message)
+@dp.message(F.chat.id.in_(GROUP_IDS), F.reply_to_message)
 async def group_handler(message: Message):
 
     try:
@@ -125,20 +125,16 @@ async def group_handler(message: Message):
 
 
 # =========================
-# BANNED LIST (АДМИН ТОЛЬКО)
+# BANNED LIST (ONLY GROUP + OWNER)
 # =========================
 @dp.message(Command("banned"))
 async def banned_list(message: Message):
 
-    print("🔥 /banned HIT")
-
-    if message.chat.type != "private":
+    if message.chat.id not in GROUP_IDS:
         return
 
     if message.from_user.id not in OWNER_IDS:
         return
-
-    print("BANNED TRIGGERED")
 
     rows = await get_banned()
 
