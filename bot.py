@@ -63,7 +63,7 @@ async def user_to_group(message: Message):
             await message.answer("🚫 Вы заблокированы.")
             return
 
-        if message.text and message.text.startswith("/"):
+        if message.text and message.text.startswith("/") and message.text != "/banned":
             return
 
         if message.text:
